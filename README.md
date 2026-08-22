@@ -1,5 +1,7 @@
 # dsh-discord-richpresence
 
+> **中文文档**: [README.zh-CN.md](README.zh-CN.md)
+
 A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin that mirrors your interaction state with dsh onto the **local Discord client** as Rich Presence — in real time, with **vague, user-configurable status lines only**.
 
 It is a host-side background plugin: no tray icon, no UI, no window. Once installed it is injected into the harness startup flow and keeps running alongside dsh.
