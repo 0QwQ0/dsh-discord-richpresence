@@ -29,10 +29,13 @@ Every one of these lines is a **plain list you can edit** in the plugin config (
 
 ## Install
 
+Repository: <https://github.com/0QwQ0/dsh-discord-richpresence>
+Release tarball: <https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.1.0.tgz>
+
 From your dsh checkout / profile:
 
 ```sh
-dsh plugin --profile web add <path-to-this-package>
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.1.0.tgz
 ```
 
 or, if the package is already on disk (e.g. this repository):
