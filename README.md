@@ -25,7 +25,8 @@ Every one of these lines is a **plain list you can edit** in the plugin config (
 ## Requirements
 
 - A **Discord desktop client** running locally on the same machine (Rich Presence goes through the local Discord IPC endpoint — a named pipe on Windows, a unix socket on macOS/Linux, or loopback TCP).
-- A **Discord Application ID** (client_id). Create a throwaway application at <https://discord.com/developers/applications> → *New Application*. You do **not** need a bot, an OAuth flow, or any token for local Rich Presence — the client_id is enough.
+
+The Discord Application ID is pre-configured in the plugin, so there is nothing to set up — install and restart, and the status lines appear on your Discord profile automatically.
 
 ## Install
 
@@ -44,15 +45,13 @@ or, if the package is already on disk (e.g. this repository):
 dsh plugin --profile web add link:/absolute/path/to/dsh-discord-richpresence
 ```
 
-Then edit the installed bundle's `cordis.patch.yml` (the same file that ships in this package under `cordis.patch.yml`) and set `config.clientId` to your Discord Application ID. Restart dsh.
-
 ## Configure
 
 All configuration lives in the bundle patch (`cordis.patch.yml`) under `config`:
 
 ```yaml
 config:
-  clientId: '123456789012345678'          # your Discord Application ID
+  clientId: '1540732930127691807'         # pre-configured; normally unchanged
   details: 'DeepSeek Harness'             # optional second line
   largeImage: ''                          # optional Discord asset key
   statuses:                               # user-editable lists, grouped by phase
@@ -73,7 +72,6 @@ config:
   reconnectMs: 15000                      # Discord reconnect poll interval
 ```
 
-- `clientId` — **required**. Without it the plugin logs a warning and disables itself.
 - `statuses` — each phase is a list; the plugin rotates through it (or picks randomly when `randomize: true`). Add, remove, or reword freely.
 - Discord may take a few seconds to reflect a status change; `minIntervalMs` throttles how often the plugin pushes.
 

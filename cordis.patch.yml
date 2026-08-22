@@ -11,9 +11,8 @@
     - id: discord-richpresence
       name: dsh-discord-richpresence
       config:
-        # Discord Application ID (required). Create one at
-        # https://discord.com/developers/applications — any app works for
-        # local Rich Presence; you do not need a bot or OAuth credentials.
+        # Pre-configured Discord Application ID — Rich Presence works out of
+        # the box with a local Discord client; no further setup required.
         clientId: '1540732930127691807'
 
         # Optional second line shown under the status.
