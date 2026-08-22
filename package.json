@@ -1,0 +1,45 @@
+{
+  "name": "dsh-discord-richpresence",
+  "version": "0.1.0",
+  "description": "Push vague, user-configurable DSH interaction states to the local Discord client as Rich Presence.",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --check lib/index.js && node --check lib/discord-rpc.js",
+    "pack:check": "npm pack --dry-run"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "discord",
+    "rich-presence",
+    "rpc"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0QwQ0/dsh-discord-richpresence.git"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,55 @@
+# dsh-discord-richpresence bundle patch.
+# Inserted into the host composition at startup; the plugin then watches coarse
+# dsh activity events and mirrors them as configurable Rich Presence lines on
+# the local Discord client.
+#
+# All `statuses` groups are plain, user-editable lists. The plugin NEVER sends
+# anything but these strings to Discord: no session titles, message text, file
+# paths, or tool output. Add or remove lines freely, or change the text.
+
+- insert:
+    - id: discord-richpresence
+      name: dsh-discord-richpresence
+      config:
+        # Discord Application ID (required). Create one at
+        # https://discord.com/developers/applications — any app works for
+        # local Rich Presence; you do not need a bot or OAuth credentials.
+        clientId: '1540732930127691807'
+
+        # Optional second line shown under the status.
+        details: 'DeepSeek Harness'
+
+        # Optional Discord asset key for the large image (uploaded under the
+        # application's Rich Presence -> Art Assets). Leave empty for none.
+        largeImage: ''
+
+        # User-configurable status messages, grouped by interaction phase.
+        # Each group is a list; the plugin rotates through it (or picks
+        # randomly when `randomize: true`).
+        statuses:
+          # A user message entered the agent's inbox.
+          userInput:
+            - 正在指挥大肥鱼干活
+            - 正在给大肥鱼喂 token
+          # The agent is running (thinking / streaming / explaining).
+          agentWorking:
+            - 正在与大肥鱼一起 Brainstorming
+            - 正在听大肥鱼讲解 Project
+          # A model tool is dispatching (edits, commands, searches, ...).
+          tools:
+            - 正在提交改动意见
+          # A new session / fork (branch conversation) was created.
+          forking:
+            - 正在创建大肥鱼记忆切片
+          # No activity.
+          idle:
+            - 正在等待大肥鱼待命
+
+        # Pick statuses at random instead of rotating in order.
+        randomize: false
+
+        # Minimum gap between two Rich Presence pushes (ms).
+        minIntervalMs: 5000
+
+        # How often to retry connecting to Discord when it is not running (ms).
+        reconnectMs: 15000
