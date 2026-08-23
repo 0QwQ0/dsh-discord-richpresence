@@ -97,6 +97,60 @@ config:
 dsh plugin --profile web remove dsh-discord-richpresence
 ```
 
+### 卸载能恢复到安装前的状态吗？
+
+**基本可以，但有一处已知残留**：
+
+| 项目 | 卸载后的状态 |
+| --- | --- |
+| `dsh.profile.bundles` 条目 | ✅ 自动移除 |
+| `dependencies`（package.json） | ✅ 自动移除 |
+| 宿主插件（事件监听、Discord RPC） | ✅ 停止（重启 dsh 后完全退出） |
+| 浏览器设置开关（client bundle） | ✅ 移除（刷新页面后消失） |
+| `node_modules` 中的链接 | ⚠️ 可能残留一个空 junction（pnpm link 安装时的物理文件，不影响运行，可手动删除） |
+| `settings.yaml` 中的 `discord-richpresence:` 段 | ⚠️ **残留**（settings 服务只注销命名空间注册，不删除用户设置文档） |
+
+**唯一需要手动处理的是 `settings.yaml`**。如果希望彻底恢复安装前的状态，编辑 `$DSH_HOME/settings.yaml`，删除这段：
+
+```yaml
+discord-richpresence:
+  richMode: true
+```
+
+删除后该设置不会再影响任何东西（插件已卸载，没有消费者读取它）；留着也无害——重装插件时会重新读取。
+
+## 升级（老版本 → 新版本）
+
+插件同包名覆盖安装即可升级，**不需要先卸载**：
+
+### 从 Release tarball 安装的升级
+
+```sh
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.1.tgz
+```
+
+dsh 会用新 tarball 覆盖旧包并保持 `dsh.profile.bundles` 条目不变。
+
+### 从 link（源码目录）安装的升级
+
+你本机是 `link:` 方式安装（指向插件源码目录）：
+
+```sh
+dsh plugin --profile web add link:/absolute/path/to/dsh-discord-richpresence
+```
+
+升级源码后**重启 dsh** 即可生效（link 指向同一目录，代码即最新版）。
+
+### 升级后需要做什么
+
+1. **重启 dsh**（host 插件在启动时加载）。
+2. **刷新浏览器页面**（client bundle 缓存在浏览器，`/plugins/dsh-discord-richpresence/client.js` 会重新拉取，新版设置开关才会出现）。
+3. **设置保留**：`settings.yaml` 中的 `discord-richpresence: richMode: <true/false>` 会**跨版本保留**——升级前开启的丰富模式，升级后依然是开启的，无需重新配置。
+
+### 升级遇到问题？
+
+如果升级后开关不回弹但状态异常，或想回到干净状态，可先完整卸载（含手动清理 settings.yaml 残留），再重新安装最新版。
+
 ## 工作原理
 
 - `lib/discord-rpc.js` — 零依赖的 Discord Rich Presence 客户端，基于本地 IPC 帧协议（用 `client_id` 握手，然后发送 `SET_ACTIVITY` 帧；含 ping/pong 保活与自动重连）。

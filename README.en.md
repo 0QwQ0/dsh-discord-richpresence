@@ -97,6 +97,60 @@ config:
 dsh plugin --profile web remove dsh-discord-richpresence
 ```
 
+### Does uninstall restore the pre-install state?
+
+**Almost — with one known leftover:**
+
+| Item | After uninstall |
+| --- | --- |
+| `dsh.profile.bundles` entry | ✅ Removed automatically |
+| `dependencies` (package.json) | ✅ Removed automatically |
+| Host plugin (event listeners, Discord RPC) | ✅ Stopped (fully gone after restarting dsh) |
+| Browser settings toggle (client bundle) | ✅ Removed (disappears after a page refresh) |
+| `node_modules` link | ⚠️ A stale empty junction may remain (pnpm `link:` install physical file; harmless, removable manually) |
+| `discord-richpresence:` section in `settings.yaml` | ⚠️ **Left behind** (the settings service only unregisters the namespace; it does not delete the user settings document) |
+
+**The only manual step is `settings.yaml`.** If you want a fully clean pre-install state, edit `$DSH_HOME/settings.yaml` and remove this block:
+
+```yaml
+discord-richpresence:
+  richMode: true
+```
+
+The leftover is harmless (no consumer reads it once the plugin is gone) and is re-read if you reinstall.
+
+## Upgrading (old version → new version)
+
+Same-package-name installs overwrite — **no uninstall needed**:
+
+### Upgrade from a Release tarball install
+
+```sh
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.1.tgz
+```
+
+dsh overwrites the old package with the new tarball and keeps the `dsh.profile.bundles` entry.
+
+### Upgrade from a `link:` (source directory) install
+
+If you installed with a `link:` spec (pointing at the plugin source directory):
+
+```sh
+dsh plugin --profile web add link:/absolute/path/to/dsh-discord-richpresence
+```
+
+After updating the source, **restart dsh** to pick up the new host code.
+
+### After upgrading
+
+1. **Restart dsh** (the host plugin loads at startup).
+2. **Refresh the browser page** (the client bundle is cached; `/plugins/dsh-discord-richpresence/client.js` is re-fetched, which is how the new settings toggle appears).
+3. **Settings are preserved**: the `discord-richpresence: richMode: <true/false>` value in `settings.yaml` **survives upgrades** — if rich mode was on before, it stays on after, no reconfiguration needed.
+
+### Upgrade problems?
+
+If the toggle misbehaves after an upgrade, do a full uninstall first (including the manual `settings.yaml` cleanup above), then install the latest version fresh.
+
 ## How it works
 
 - `lib/discord-rpc.js` — dependency-free Discord Rich Presence client over the local IPC frame protocol (handshake with `client_id`, then `SET_ACTIVITY` frames; ping/pong keepalive; automatic reconnect).
