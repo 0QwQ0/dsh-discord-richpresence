@@ -1,6 +1,6 @@
 {
   "name": "dsh-discord-richpresence",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Push vague or rich, user-configurable DSH interaction states to the local Discord client as Rich Presence.",
   "type": "module",
   "main": "./lib/index.js",
@@ -14,7 +14,7 @@
     "cordis.patch.yml",
     "marketplace",
     "README.md",
-    "README.zh-CN.md",
+    "README.en.md",
     "LICENSE"
   ],
   "scripts": {
