@@ -1,5 +1,6 @@
-// Smoke test for host-half v0.2.0: settings registration, rich mode switch,
-// live facts, and the ≥8s smart random loop.
+// Smoke test for host-half v0.2.2: settings registration, active-session
+// tracking (user input selects the session; subagent events are ignored),
+// rich mode switch, and live facts.
 import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -15,15 +16,7 @@ const { installSettingsSection, settingsNamespace } = dshSettings
 const { apply, name } = await import('file:///F:/aura/pluginDev/dsh-discord-richpresence/lib/index.js')
 console.log('plugin name:', name)
 
-// Track what would be pushed to Discord.
-const pushed = []
-const mockRpc = { setActivity: () => Promise.resolve(true), isConnected: () => true, close: () => {} }
-// Patch DiscordRpc via the module namespace is not possible (const import);
-// instead we stub by injecting a fake by rewriting the imported binding is
-// not feasible either. So we verify logic through the events and settings.
-
 const ctx = new Context()
-// Provide minimal `settings` service so installSettingsSection works.
 const registrations = new Map()
 const settingsService = {
   register(ns, schema, options = {}) {
@@ -41,9 +34,11 @@ const settingsService = {
 }
 ctx.reflect.provide('settings', settingsService)
 
-// Inject a fake `settings` resolve path through ctx.inject? installSettingsSection
-// uses ctx.inject(['settings'], cb). Cordis inject resolves services by name.
-// Our fake service is provided under name 'settings', so it resolves.
+// Mock tokenMeter so pre-step can measure tokens.
+const tokenMeter = {
+  measure: (session) => ({ totalTokens: session._tokens ?? 0 }),
+}
+ctx.reflect.provide('tokenMeter', tokenMeter)
 
 let disposer
 try {
@@ -66,16 +61,11 @@ try {
   process.exit(1)
 }
 
-// Simulate the settings namespace registration side effect.
-const ns = settingsNamespace('discord-richpresence')
-// installSettingsSection registers via ctx.inject — Cordis inject runs the
-// callback asynchronously after the service exists. We provided the service,
-// so call through a manual flush.
 await new Promise((r) => setTimeout(r, 50))
+const ns = settingsNamespace('discord-richpresence')
 const registered = registrations.get(String(ns))
 console.log('settings namespace registered:', String(ns), registered ? 'YES' : 'NO')
 
-// Fire events like dsh does (carrier dispatch).
 const carrier = { [Symbol.for('cordis.filter')]: () => false }
 const fire = (name2, payload) => {
   const args = [carrier, name2, payload]
@@ -84,29 +74,85 @@ const fire = (name2, payload) => {
     try { cb(...args) } catch (error) { console.error('listener threw:', error) }
   }
 }
-
-fire('agent/inbox/inserted', { agent: { id: 'a1' }, message: {} })
-fire('agent/status', { agent: { id: 'a1' }, status: 'running' })
-// agent/pre-step is a waterfall in real dsh; the plugin listener is (payload, next).
-{
-  const args = [carrier, 'agent/pre-step', { agent: { id: 'a1', session: {} }, turn: 195, step: 6 }]
-  // Cordis waterfall: dispatch returns callbacks; compose them around a final next.
+const fireStep = async (agent) => {
+  const args = [carrier, 'agent/pre-step', agent]
   const callbacks = ctx.events.dispatch('waterfall', args)
   const inner = async () => ({ ok: true })
   const compose = (list) => list.reduceRight(
-    (nextFn, cb) => () => cb({ agent: { id: 'a1', session: {} }, turn: 195, step: 6 }, nextFn),
+    (nextFn, cb) => () => cb(agent, nextFn),
     inner,
   )
   const chain = compose(callbacks)
   await chain()
 }
-await new Promise((r) => setTimeout(r, 300))
-fire('agent/status', { agent: { id: 'a1' }, status: 'idle' })
+
+// A top-level agent is created first (no active session yet -> adopt it).
+fire('agent/created', {
+  agent: {
+    id: 'root-1',
+    session: { header: { origin: undefined, delegationDepth: undefined }, _tokens: 100 },
+  },
+})
+console.log('after root created (no user input yet)')
+
+// A SUBAGENT is created — must NOT be adopted as active.
+fire('agent/created', {
+  agent: {
+    id: 'sub-1',
+    session: { header: { origin: 'subagent', delegationDepth: 1 }, _tokens: 999 },
+  },
+})
+
+// Subagent pre-steps must be ignored: huge turn/step/tokens from sub-1.
+await fireStep({
+  agent: { id: 'sub-1', session: { header: { origin: 'subagent', delegationDepth: 1 }, _tokens: 999 } },
+  turn: 999, step: 999,
+})
+// Subagent status must not drive phases.
+fire('agent/status', { agent: { id: 'sub-1', session: {} }, status: 'running' })
+
+// Now the user sends a real message to root-1 (source.kind === 'user').
+fire('agent/inbox/inserted', {
+  agent: { id: 'root-1', session: { header: { origin: undefined }, _tokens: 100 } },
+  message: { source: { kind: 'user' }, content: [] },
+})
+console.log('user input to root-1')
+
+// Root pre-step with real facts.
+await fireStep({
+  agent: { id: 'root-1', session: { header: { origin: undefined }, _tokens: 38700000 } },
+  turn: 195, step: 6,
+})
+fire('agent/status', { agent: { id: 'root-1', session: {} }, status: 'running' })
+await new Promise((r) => setTimeout(r, 50))
+fire('agent/status', { agent: { id: 'root-1', session: {} }, status: 'idle' })
+
+// A user switches to another top-level session root-2.
+fire('agent/created', {
+  agent: {
+    id: 'root-2',
+    session: { header: { origin: undefined, delegationDepth: undefined }, _tokens: 500 },
+  },
+})
+fire('agent/inbox/inserted', {
+  agent: { id: 'root-2', session: { header: { origin: undefined }, _tokens: 500 } },
+  message: { source: { kind: 'user' }, content: [] },
+})
+// root-1 steps AFTER switch must be ignored.
+await fireStep({
+  agent: { id: 'root-1', session: { header: { origin: undefined }, _tokens: 111 } },
+  turn: 1, step: 1,
+})
+// root-2 steps count.
+await fireStep({
+  agent: { id: 'root-2', session: { header: { origin: undefined }, _tokens: 12400 } },
+  turn: 3, step: 2,
+})
+fire('agent/status', { agent: { id: 'root-2', session: {} }, status: 'running' })
 
 console.log('events fired without throwing')
-console.log('registered ns resolved:', JSON.stringify(registered?.resolved ?? null))
 
-// Verify the plugin's rich-mode loop machinery exists by toggling the setting.
+// Verify the rich-mode loop machinery exists by toggling the setting.
 if (registered) {
   registered.resolved.richMode = true
   for (const w of registered.watchers) w()

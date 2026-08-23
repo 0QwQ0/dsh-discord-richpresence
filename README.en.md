@@ -31,7 +31,9 @@ By default the plugin pushes the vague status lines above. In **Settings → Gen
 | Total input tokens | 大肥鱼正在记笔记 38.7M |
 | Elapsed LLM thinking time | 大肥鱼已经思考了 30m46s |
 
-Rich-mode statuses are picked **intelligently and randomly** from the current live facts — they are not bound to a specific moment — and **each status stays on screen for at least 8 seconds**. The toggle is persisted at runtime in the `discord-richpresence` settings namespace; there is nothing to configure in the patch for it.
+Rich-mode statuses are picked **intelligently and randomly** from the current live facts — they are not bound to a specific moment — and **each status stays on screen for at least 8 seconds**.
+
+**The data is always tied to the conversation you are currently interacting with**: the plugin tracks the session of your last real input (`source.kind === 'user'`) and collects thinking steps, token counts, and elapsed thinking time from that session only — subagents, background sessions, and other workspaces never leak in. When you switch sessions, the pushed data follows automatically. The toggle is persisted at runtime in the `discord-richpresence` settings namespace; there is nothing to configure in the patch for it.
 
 ## Privacy
 
@@ -46,12 +48,12 @@ The Discord Application ID is pre-configured in the plugin, so there is nothing 
 ## Install
 
 Repository: <https://github.com/0QwQ0/dsh-discord-richpresence>
-Release tarball: <https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.1.tgz>
+Release tarball: <https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz>
 
 From your dsh checkout / profile:
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.1.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz
 ```
 
 or, if the package is already on disk (e.g. this repository):
@@ -126,7 +128,7 @@ Same-package-name installs overwrite — **no uninstall needed**:
 ### Upgrade from a Release tarball install
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.1.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz
 ```
 
 dsh overwrites the old package with the new tarball and keeps the `dsh.profile.bundles` entry.

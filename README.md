@@ -31,7 +31,9 @@
 | 总输入 tokens | 大肥鱼正在记笔记 38.7M |
 | LLM 已思考时长 | 大肥鱼已经思考了 30m46s |
 
-丰富模式的状态是**智能随机**地从当前实时数据中挑选的——并不绑定某个特定时刻——并且**每个状态在 Discord 上至少展示 8 秒**。该开关运行时持久化在 `discord-richpresence` 设置命名空间中，无需在 patch 里配置。
+丰富模式的状态是**智能随机**地从当前实时数据中挑选的——并不绑定某个特定时刻——并且**每个状态在 Discord 上至少展示 8 秒**。
+
+**数据始终关联你当前正在交互的会话**：插件会跟踪你最后一条真实输入（`source.kind === 'user'`）所在的会话，思考步数、token 数、思考时长都只从那个会话采集——子代理、后台会话、其他工作区的数据不会被混入。当你切换会话继续交互时，推送的数据会自动跟着切换。该开关运行时持久化在 `discord-richpresence` 设置命名空间中，无需在 patch 里配置。
 
 ## 隐私
 
@@ -46,12 +48,12 @@ Discord Application ID 已预置在插件中，无需任何配置——安装并
 ## 安装
 
 仓库：<https://github.com/0QwQ0/dsh-discord-richpresence>
-发布包：<https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.1.tgz>
+发布包：<https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz>
 
 在 dsh 检出目录 / profile 下执行：
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.1.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz
 ```
 
 如果包已在本地磁盘上（例如本仓库）：
@@ -126,7 +128,7 @@ discord-richpresence:
 ### 从 Release tarball 安装的升级
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.1.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz
 ```
 
 dsh 会用新 tarball 覆盖旧包并保持 `dsh.profile.bundles` 条目不变。
