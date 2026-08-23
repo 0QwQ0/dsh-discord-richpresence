@@ -6,6 +6,14 @@
 # All `statuses` groups are plain, user-editable lists. The plugin NEVER sends
 # anything but these strings to Discord: no session titles, message text, file
 # paths, or tool output. Add or remove lines freely, or change the text.
+#
+# Display mode: the plugin ships with a "rich mode" toggle in the web settings
+# (Settings -> General -> Rich presence detail). Rich mode is OFF by default
+# (vague status lines only). When switched ON, the plugin pushes smarter,
+# data-driven status lines (thinking turn/step, total input tokens, LLM
+# elapsed time), each staying on screen for at least 8 seconds. The toggle is
+# stored in the `discord-richpresence` settings namespace at runtime; there is
+# nothing to configure here for it.
 
 - insert:
     - id: discord-richpresence
@@ -42,7 +50,7 @@
             - 正在创建大肥鱼记忆切片
           # No activity.
           idle:
-            - 正在等待大肥鱼待命
+            - 大肥鱼待命
 
         # Pick statuses at random instead of rotating in order.
         randomize: false

@@ -16,13 +16,26 @@ The plugin watches coarse activity signals from the running harness:
 | The agent is running (thinking / streaming) | 正在与大肥鱼一起 Brainstorming / 正在听大肥鱼讲解 Project |
 | A model tool is dispatching | 正在提交改动意见 |
 | A new session / fork (branch conversation) was created | 正在创建大肥鱼记忆切片 |
-| No activity | 正在等待大肥鱼待命 |
+| No activity | 大肥鱼待命 |
 
 Every one of these lines is a **plain list you can edit** in the plugin config (`statuses`). The plugin only ever sends those exact strings to Discord.
 
+## Rich mode (optional)
+
+By default the plugin pushes the vague status lines above. In **Settings → General → Rich presence detail** you can switch on **rich mode**. When enabled, the plugin pushes smarter, data-driven status lines instead:
+
+| Live fact | Example status |
+| --- | --- |
+| You just sent a message | 正在指导大肥鱼 |
+| The agent is thinking | 大肥鱼正在思考 6/195 |
+| Total input tokens | 大肥鱼正在记笔记 38.7M |
+| Elapsed LLM thinking time | 大肥鱼已经思考了 30m46s |
+
+Rich-mode statuses are picked **intelligently and randomly** from the current live facts — they are not bound to a specific moment — and **each status stays on screen for at least 8 seconds**. The toggle is persisted at runtime in the `discord-richpresence` settings namespace; there is nothing to configure in the patch for it.
+
 ## Privacy
 
-**The plugin never reads your workspace content.** It does not look at session titles, message text, file paths, tool input/output, or any other content. It only reacts to coarse lifecycle signals (`agent/inbox/inserted`, `agent/status`, `tools/pre-execute`, `session/created`, `workflow/start`) and pushes the configurable status strings. If you keep the default lists, Discord can only ever see lines like "正在指挥大肥鱼干活".
+**The plugin never reads your workspace content.** It does not look at session titles, message text, file paths, tool input/output, or any other content. It only reacts to coarse lifecycle signals (`agent/inbox/inserted`, `agent/status`, `agent/pre-step`, `tools/pre-execute`, `session/created`, `workflow/start`) and pushes the configurable status strings (or the rich-mode templates above, filled with scalar facts only — no content). If you keep the default lists, Discord can only ever see lines like "正在指挥大肥鱼干活".
 
 ## Requirements
 
@@ -33,12 +46,12 @@ The Discord Application ID is pre-configured in the plugin, so there is nothing 
 ## Install
 
 Repository: <https://github.com/0QwQ0/dsh-discord-richpresence>
-Release tarball: <https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.1.0.tgz>
+Release tarball: <https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.0.tgz>
 
 From your dsh checkout / profile:
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.1.0.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.0.tgz
 ```
 
 or, if the package is already on disk (e.g. this repository):
@@ -68,7 +81,7 @@ config:
     forking:
       - 正在创建大肥鱼记忆切片
     idle:
-      - 正在等待大肥鱼待命
+      - 大肥鱼待命
   randomize: false                        # random instead of rotating
   minIntervalMs: 5000                     # min gap between pushes
   reconnectMs: 15000                      # Discord reconnect poll interval
@@ -76,6 +89,7 @@ config:
 
 - `statuses` — each phase is a list; the plugin rotates through it (or picks randomly when `randomize: true`). Add, remove, or reword freely.
 - Discord may take a few seconds to reflect a status change; `minIntervalMs` throttles how often the plugin pushes.
+- The rich-mode toggle is **not** part of the patch — it lives in Settings → General and is persisted at runtime.
 
 ## Uninstall
 
@@ -86,7 +100,8 @@ dsh plugin --profile web remove dsh-discord-richpresence
 ## How it works
 
 - `lib/discord-rpc.js` — dependency-free Discord Rich Presence client over the local IPC frame protocol (handshake with `client_id`, then `SET_ACTIVITY` frames; ping/pong keepalive; automatic reconnect).
-- `lib/index.js` — the Cordis host plugin. It registers global listeners for the coarse harness events, maps them to the configured status lists, and pushes through the RPC client. All timers and the socket are torn down when the plugin fiber unloads.
+- `lib/index.js` — the Cordis host plugin. It registers global listeners for the coarse harness events, maps them to the configured status lists (or rich-mode templates), and pushes through the RPC client. Rich mode reads the `discord-richpresence` settings namespace; all timers and the socket are torn down when the plugin fiber unloads.
+- `lib/client.js` — the browser half. Registers the Settings → General toggle row that writes the `richMode` field of the `discord-richpresence` settings namespace.
 
 ## License
 

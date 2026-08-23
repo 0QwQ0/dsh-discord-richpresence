@@ -1,11 +1,12 @@
 {
   "name": "dsh-discord-richpresence",
-  "version": "0.1.0",
-  "description": "Push vague, user-configurable DSH interaction states to the local Discord client as Rich Presence.",
+  "version": "0.2.0",
+  "description": "Push vague or rich, user-configurable DSH interaction states to the local Discord client as Rich Presence.",
   "type": "module",
   "main": "./lib/index.js",
   "exports": {
     ".": "./lib/index.js",
+    "./client": "./lib/client.js",
     "./package.json": "./package.json"
   },
   "files": [
@@ -17,16 +18,29 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --check lib/index.js && node --check lib/discord-rpc.js",
+    "test": "node --check lib/index.js && node --check lib/discord-rpc.js && node --check lib/client.js",
     "pack:check": "npm pack --dry-run"
   },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-api-remotes"
+      ]
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1"
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-settings": "^0.1.1",
+    "@deepseek-ai/schemastery": "^0.1.1"
   },
   "engines": {
     "node": ">=22.19.0"
