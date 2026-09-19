@@ -42,18 +42,31 @@
 ## 环境要求
 
 - 本机运行着 **Discord 桌面客户端**（Rich Presence 走本地 Discord IPC 端点——Windows 上是命名管道，macOS/Linux 上是 unix socket，或回环 TCP）。
+- **DeepSeek Harness 0.1.1-rc.1 及以上**（已适配到当前 npm `latest` 稳定版 `0.1.5-rc.2`，同时兼容更早的 `0.1.1-rc.2`）。
+
+### 兼容的 Harness 版本
+
+插件同时适配两代 Harness 的 settings API，无需按版本切换：
+
+| Harness 版本 | 设置注册路径 | 客户端 store |
+| --- | --- | --- |
+| `0.1.5-rc.1`+ （含当前 `latest` `0.1.5-rc.2`） | `ctx.settings.installSection(...)` | `@deepseek-ai/dsh-client-store` |
+| `0.1.1-rc.1` ~ `0.1.4` | `ctx.settings.register(...)` | `@deepseek-ai/dsh-client-runtime/client` |
+| 两者都不可用时 | 回退到组合配置值 | 内置最小 store 实现 |
+
+插件在启动时自动探测当前 Harness 提供的 API，因此升级 Harness 后无需改动插件配置。**如果你还在旧版 Harness 上**（如 `0.1.1-rc.2`），插件同样工作；升级 Harness 后请按[升级](#升级老版本--新版本)一节重启 dsh 并刷新页面。
 
 Discord Application ID 已预置在插件中，无需任何配置——安装并重启后，状态就会自动出现在你的 Discord 个人资料上。
 
 ## 安装
 
 仓库：<https://github.com/0QwQ0/dsh-discord-richpresence>
-发布包：<https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz>
+发布包：<https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz>
 
 在 dsh 检出目录 / profile 下执行：
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz
 ```
 
 如果包已在本地磁盘上（例如本仓库）：
@@ -128,7 +141,7 @@ discord-richpresence:
 ### 从 Release tarball 安装的升级
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz
 ```
 
 dsh 会用新 tarball 覆盖旧包并保持 `dsh.profile.bundles` 条目不变。
@@ -149,6 +162,16 @@ dsh plugin --profile web add link:/absolute/path/to/dsh-discord-richpresence
 2. **刷新浏览器页面**（client bundle 缓存在浏览器，`/plugins/dsh-discord-richpresence/client.js` 会重新拉取，新版设置开关才会出现）。
 3. **设置保留**：`settings.yaml` 中的 `discord-richpresence: richMode: <true/false>` 会**跨版本保留**——升级前开启的丰富模式，升级后依然是开启的，无需重新配置。
 
+### 升级 Harness 本身（如 0.1.1 → 0.1.5）
+
+插件会**自动适配**新的 settings API 与客户端 store 包，你不需要改插件配置：
+
+1. 按 Harness 官方方式升级 dsh（`dsh plugin` 管理的 profile 会随 Harness 版本更新其内置包）。
+2. **重启 dsh**：宿主半部在启动时探测 `ctx.settings` 提供的是哪一代 API 并选择对应注册路径。
+3. **刷新浏览器页面**：客户端半部重新拉取后会自动使用新版的 store 包。
+
+若升级 Harness 后设置开关消失，通常是浏览器仍在用旧的 client bundle——再刷新一次页面即可；仍不行则重启 dsh。
+
 ### 升级遇到问题？
 
 如果升级后开关不回弹但状态异常，或想回到干净状态，可先完整卸载（含手动清理 settings.yaml 残留），再重新安装最新版。
@@ -156,8 +179,8 @@ dsh plugin --profile web add link:/absolute/path/to/dsh-discord-richpresence
 ## 工作原理
 
 - `lib/discord-rpc.js` — 零依赖的 Discord Rich Presence 客户端，基于本地 IPC 帧协议（用 `client_id` 握手，然后发送 `SET_ACTIVITY` 帧；含 ping/pong 保活与自动重连）。
-- `lib/index.js` — Cordis 宿主插件。注册粗粒度宿主事件的全局监听器，映射到配置好的状态列表（或丰富模式模板），再通过 RPC 客户端推送。丰富模式读取 `discord-richpresence` 设置命名空间；插件纤维卸载时会清理所有定时器并关闭 socket。
-- `lib/client.js` — 浏览器半部。注册设置 → 通用设置里的切换行，写入 `discord-richpresence` 设置命名空间的 `richMode` 字段。
+- `lib/index.js` — Cordis 宿主插件。注册粗粒度宿主事件的全局监听器，映射到配置好的状态列表（或丰富模式模板），再通过 RPC 客户端推送。设置注册在运行时探测 Harness 提供的是 `installSection`（0.1.5+）还是 `register`（0.1.1）并选择对应路径；丰富模式读取 `discord-richpresence` 设置命名空间；插件纤维卸载时会清理所有定时器并关闭 socket。
+- `lib/client.js` — 浏览器半部。注册设置 → 通用设置里的切换行，写入 `discord-richpresence` 设置命名空间的 `richMode` 字段。store 实现按 `@deepseek-ai/dsh-client-store`（0.1.5+）→ `@deepseek-ai/dsh-client-runtime/client`（0.1.1）→ 内置实现的顺序解析。
 
 ## 许可证
 

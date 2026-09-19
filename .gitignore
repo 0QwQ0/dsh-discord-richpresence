@@ -1,3 +1,7 @@
 node_modules/
 *.tgz
 npm-debug.log*
+
+# Throwaway module copies a test writes beside the plugin source so package
+# resolution still applies (removed by the test itself on every exit path).
+lib/*.mock.mjs

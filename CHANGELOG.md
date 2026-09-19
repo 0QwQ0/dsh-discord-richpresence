@@ -2,6 +2,38 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.3.0] - 2026-08-24
+
+### Added
+
+- Support for the current npm `latest` harness release (`0.1.5-rc.2`), alongside
+  the earlier `0.1.1-rc.2` line. No configuration switch is needed.
+
+### Changed
+
+- **Host half**: settings registration now probes the running harness. `0.1.5+`
+  exposes `SettingsProvider.installSection(owner, ns, schema, entry, hooks)`,
+  while `0.1.1` only has `register(ns, schema, { base })`; the plugin no longer
+  imports the module-level `installSettingsSection` / `settingsNamespace`
+  helpers that `0.1.5` removed, so the module loads on either generation.
+- **Client half**: the snapshot store resolves at runtime —
+  `@deepseek-ai/dsh-client-store` (`0.1.5+`) → `@deepseek-ai/dsh-client-runtime/client`
+  (`0.1.1`) → an inlined minimal implementation — instead of hard-requiring the
+  package that `0.1.5` dropped.
+- `dsh.client.inject` no longer lists `@deepseek-ai/dsh-client-runtime`, which
+  does not exist in `0.1.5+`.
+- `peerDependencies` for `@deepseek-ai/dsh-settings` now uses an explicit
+  pre-release branch (`>=0.1.1-rc.1 <0.1.5-0 || >=0.1.5-rc.1 <0.2.0-0`); the
+  previous `>=0.1.1-rc.1 <0.2.0-0` silently excluded `0.1.5-rc.2` under
+  node-semver's pre-release rules.
+
+### Verified
+
+- Settings registration exercised against real `SettingsProvider`
+  implementations on both generations (`test/compat-settings.mjs`).
+- Client bundle exercised for all three store-resolution paths
+  (`test/client-bundle.mjs`).
+
 ## [0.2.2] - 2026-08-23
 
 ### Fixed

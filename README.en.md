@@ -42,18 +42,31 @@ Rich-mode statuses are picked **intelligently and randomly** from the current li
 ## Requirements
 
 - A **Discord desktop client** running locally on the same machine (Rich Presence goes through the local Discord IPC endpoint — a named pipe on Windows, a unix socket on macOS/Linux, or loopback TCP).
+- **DeepSeek Harness 0.1.1-rc.1 or newer** (adapted to the current npm `latest` stable release `0.1.5-rc.2`, while remaining compatible with the earlier `0.1.1-rc.2`).
+
+### Supported harness generations
+
+The plugin adapts to both settings API generations at runtime — no per-version switch is needed:
+
+| Harness version | Settings registration | Client store |
+| --- | --- | --- |
+| `0.1.5-rc.1`+ (including current `latest` `0.1.5-rc.2`) | `ctx.settings.installSection(...)` | `@deepseek-ai/dsh-client-store` |
+| `0.1.1-rc.1` – `0.1.4` | `ctx.settings.register(...)` | `@deepseek-ai/dsh-client-runtime/client` |
+| Neither package reachable | falls back to the composition entry | inlined minimal store |
+
+The plugin probes the running harness at startup, so upgrading the harness needs no plugin configuration change. If you are still on an older harness (e.g. `0.1.1-rc.2`) the plugin keeps working; after upgrading the harness, restart dsh and refresh the page as described under [Upgrading](#upgrading-old-version--new-version).
 
 The Discord Application ID is pre-configured in the plugin, so there is nothing to set up — install and restart, and the status lines appear on your Discord profile automatically.
 
 ## Install
 
 Repository: <https://github.com/0QwQ0/dsh-discord-richpresence>
-Release tarball: <https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz>
+Release tarball: <https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz>
 
 From your dsh checkout / profile:
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz
 ```
 
 or, if the package is already on disk (e.g. this repository):
@@ -128,7 +141,7 @@ Same-package-name installs overwrite — **no uninstall needed**:
 ### Upgrade from a Release tarball install
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.2.2.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz
 ```
 
 dsh overwrites the old package with the new tarball and keeps the `dsh.profile.bundles` entry.
@@ -149,6 +162,16 @@ After updating the source, **restart dsh** to pick up the new host code.
 2. **Refresh the browser page** (the client bundle is cached; `/plugins/dsh-discord-richpresence/client.js` is re-fetched, which is how the new settings toggle appears).
 3. **Settings are preserved**: the `discord-richpresence: richMode: <true/false>` value in `settings.yaml` **survives upgrades** — if rich mode was on before, it stays on after, no reconfiguration needed.
 
+### Upgrading the harness itself (e.g. 0.1.1 → 0.1.5)
+
+The plugin **adapts automatically** to the newer settings API and client store package; no plugin configuration change is needed:
+
+1. Upgrade dsh the usual way (a `dsh plugin`-managed profile updates its harness packages with the release).
+2. **Restart dsh**: the host half probes whether `ctx.settings` exposes `installSection` (0.1.5+) or `register` (0.1.1) and takes the matching path.
+3. **Refresh the browser page**: the client half is re-fetched and resolves the store package for the new generation.
+
+If the settings toggle disappears after a harness upgrade, the browser is usually still running the old client bundle — refresh once more, and restart dsh if it persists.
+
 ### Upgrade problems?
 
 If the toggle misbehaves after an upgrade, do a full uninstall first (including the manual `settings.yaml` cleanup above), then install the latest version fresh.
@@ -156,8 +179,8 @@ If the toggle misbehaves after an upgrade, do a full uninstall first (including 
 ## How it works
 
 - `lib/discord-rpc.js` — dependency-free Discord Rich Presence client over the local IPC frame protocol (handshake with `client_id`, then `SET_ACTIVITY` frames; ping/pong keepalive; automatic reconnect).
-- `lib/index.js` — the Cordis host plugin. It registers global listeners for the coarse harness events, maps them to the configured status lists (or rich-mode templates), and pushes through the RPC client. Rich mode reads the `discord-richpresence` settings namespace; all timers and the socket are torn down when the plugin fiber unloads.
-- `lib/client.js` — the browser half. Registers the Settings → General toggle row that writes the `richMode` field of the `discord-richpresence` settings namespace.
+- `lib/index.js` — the Cordis host plugin. It registers global listeners for the coarse harness events, maps them to the configured status lists (or rich-mode templates), and pushes through the RPC client. Settings registration probes the running harness and uses `installSection` (0.1.5+) or `register` (0.1.1); rich mode reads the `discord-richpresence` settings namespace; all timers and the socket are torn down when the plugin fiber unloads.
+- `lib/client.js` — the browser half. Registers the Settings → General toggle row that writes the `richMode` field of the `discord-richpresence` settings namespace. Its store resolves in order: `@deepseek-ai/dsh-client-store` (0.1.5+) → `@deepseek-ai/dsh-client-runtime/client` (0.1.1) → an inlined implementation.
 
 ## License
 

@@ -26,20 +26,36 @@ const mockModule = {
   },
   buildActivity: ({ state, details, startTime, largeImage }) => ({ state, details }),
 }
-const mockUrl = pathToFileURL('F:/aura/pluginDev/dsh-discord-richpresence/lib/discord-rpc.mock.mjs').href
-await import('node:fs/promises').then(fs => fs.writeFile(
-  'F:/aura/pluginDev/dsh-discord-richpresence/lib/discord-rpc.mock.mjs',
-  'export const DiscordRpc = globalThis.__mockDiscordRpc.DiscordRpc\nexport const buildActivity = globalThis.__mockDiscordRpc.buildActivity\n',
-))
-globalThis.__mockDiscordRpc = mockModule
-// Load index.js from the real path; its `import './discord-rpc.js'` will use
-// the real file, so instead we load a COPY that imports the mock.
+// The plugin half is loaded through a throwaway copy that points its
+// discord-rpc import at a capture stub. The copies live under lib/ so the
+// plugin's own package resolution still applies, and are removed again in the
+// finally block below (also covered by .gitignore).
+const pluginRoot = 'F:/aura/pluginDev/dsh-discord-richpresence'
 const fsMod = await import('node:fs/promises')
-const realSrc = await fsMod.readFile('F:/aura/pluginDev/dsh-discord-richpresence/lib/index.js', 'utf8')
-const patched = realSrc.replace("from './discord-rpc.js'", "from './discord-rpc.mock.mjs'")
-await fsMod.writeFile('F:/aura/pluginDev/dsh-discord-richpresence/lib/index.mock.mjs', patched)
-const { apply, name } = await import('file:///F:/aura/pluginDev/dsh-discord-richpresence/lib/index.mock.mjs')
-console.log('plugin name:', name)
+const rpcMockPath = `${pluginRoot}/lib/discord-rpc.mock.mjs`
+const indexMockPath = `${pluginRoot}/lib/index.mock.mjs`
+const cleanup = async () => {
+  for (const p of [rpcMockPath, indexMockPath]) {
+    try { await fsMod.rm(p, { force: true }) } catch { /* already gone */ }
+  }
+}
+let apply
+try {
+  await fsMod.writeFile(
+    rpcMockPath,
+    'export const DiscordRpc = globalThis.__mockDiscordRpc.DiscordRpc\nexport const buildActivity = globalThis.__mockDiscordRpc.buildActivity\n',
+  )
+  globalThis.__mockDiscordRpc = mockModule
+  const realSrc = await fsMod.readFile(`${pluginRoot}/lib/index.js`, 'utf8')
+  await fsMod.writeFile(indexMockPath, realSrc.replace("from './discord-rpc.js'", "from './discord-rpc.mock.mjs'"))
+  const mod = await import(`file://${indexMockPath}`)
+  apply = mod.apply
+  console.log('plugin name:', mod.name)
+} catch (error) {
+  console.error('FAIL: could not prepare the plugin under test:', error)
+  await cleanup()
+  process.exit(1)
+}
 
 const ctx = new Context()
 const registrations = new Map()
@@ -118,17 +134,21 @@ console.log('states containing subagent 999:', stale.length, '(expect 0)')
 
 if (stale.length > 0) {
   console.error('FAIL: subagent data leaked into Discord states')
+  await cleanup()
   process.exit(1)
 }
 if (afterRoot1.length === 0) {
   console.error('FAIL: root-1 rich states missing')
+  await cleanup()
   process.exit(1)
 }
 if (afterRoot2.length === 0) {
   console.error('FAIL: root-2 rich states missing after session switch')
+  await cleanup()
   process.exit(1)
 }
 
 disposer()
+await cleanup()
 console.log('ACTIVE-SESSION FILTER TEST PASSED')
 process.exit(0)
