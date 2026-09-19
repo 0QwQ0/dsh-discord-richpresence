@@ -42,15 +42,15 @@
 ## 环境要求
 
 - 本机运行着 **Discord 桌面客户端**（Rich Presence 走本地 Discord IPC 端点——Windows 上是命名管道，macOS/Linux 上是 unix socket，或回环 TCP）。
-- **DeepSeek Harness 0.1.1-rc.1 及以上**（已适配到当前 npm `latest` 稳定版 `0.1.5-rc.2`，同时兼容更早的 `0.1.1-rc.2`）。
+- **DeepSeek Harness 0.1.1-rc.1 及以上**（已适配当前 npm `latest` 稳定版 `0.1.5-rc.2` 以及预览版 `0.1.6-alpha.2`，同时兼容更早的 `0.1.1-rc.2`）。
 
 ### 兼容的 Harness 版本
 
-插件同时适配两代 Harness 的 settings API，无需按版本切换：
+插件在运行时探测 Harness 提供的能力，无需按版本切换：
 
 | Harness 版本 | 设置注册路径 | 客户端 store |
 | --- | --- | --- |
-| `0.1.5-rc.1`+ （含当前 `latest` `0.1.5-rc.2`） | `ctx.settings.installSection(...)` | `@deepseek-ai/dsh-client-store` |
+| `0.1.5`+（含 `latest` `0.1.5-rc.2`、`0.1.6-alpha.2`） | `ctx.settings.installSection(...)` | `@deepseek-ai/dsh-client-store` |
 | `0.1.1-rc.1` ~ `0.1.4` | `ctx.settings.register(...)` | `@deepseek-ai/dsh-client-runtime/client` |
 | 两者都不可用时 | 回退到组合配置值 | 内置最小 store 实现 |
 
@@ -61,12 +61,12 @@ Discord Application ID 已预置在插件中，无需任何配置——安装并
 ## 安装
 
 仓库：<https://github.com/0QwQ0/dsh-discord-richpresence>
-发布包：<https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz>
+发布包：<https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence.tgz>
 
 在 dsh 检出目录 / profile 下执行：
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence.tgz
 ```
 
 如果包已在本地磁盘上（例如本仓库）：
@@ -141,7 +141,7 @@ discord-richpresence:
 ### 从 Release tarball 安装的升级
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence.tgz
 ```
 
 dsh 会用新 tarball 覆盖旧包并保持 `dsh.profile.bundles` 条目不变。

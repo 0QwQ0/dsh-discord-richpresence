@@ -42,15 +42,15 @@ Rich-mode statuses are picked **intelligently and randomly** from the current li
 ## Requirements
 
 - A **Discord desktop client** running locally on the same machine (Rich Presence goes through the local Discord IPC endpoint — a named pipe on Windows, a unix socket on macOS/Linux, or loopback TCP).
-- **DeepSeek Harness 0.1.1-rc.1 or newer** (adapted to the current npm `latest` stable release `0.1.5-rc.2`, while remaining compatible with the earlier `0.1.1-rc.2`).
+- **DeepSeek Harness 0.1.1-rc.1 or newer** (adapted to the current npm `latest` stable release `0.1.5-rc.2` and the `0.1.6-alpha.2` preview, while remaining compatible with the earlier `0.1.1-rc.2`).
 
 ### Supported harness generations
 
-The plugin adapts to both settings API generations at runtime — no per-version switch is needed:
+The plugin probes what the running harness offers at startup — no per-version switch is needed:
 
 | Harness version | Settings registration | Client store |
 | --- | --- | --- |
-| `0.1.5-rc.1`+ (including current `latest` `0.1.5-rc.2`) | `ctx.settings.installSection(...)` | `@deepseek-ai/dsh-client-store` |
+| `0.1.5`+ (including `latest` `0.1.5-rc.2` and `0.1.6-alpha.2`) | `ctx.settings.installSection(...)` | `@deepseek-ai/dsh-client-store` |
 | `0.1.1-rc.1` – `0.1.4` | `ctx.settings.register(...)` | `@deepseek-ai/dsh-client-runtime/client` |
 | Neither package reachable | falls back to the composition entry | inlined minimal store |
 
@@ -61,12 +61,12 @@ The Discord Application ID is pre-configured in the plugin, so there is nothing 
 ## Install
 
 Repository: <https://github.com/0QwQ0/dsh-discord-richpresence>
-Release tarball: <https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz>
+Release tarball: <https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence.tgz>
 
 From your dsh checkout / profile:
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence.tgz
 ```
 
 or, if the package is already on disk (e.g. this repository):
@@ -141,7 +141,7 @@ Same-package-name installs overwrite — **no uninstall needed**:
 ### Upgrade from a Release tarball install
 
 ```sh
-dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence-0.3.0.tgz
+dsh plugin --profile web add https://github.com/0QwQ0/dsh-discord-richpresence/releases/latest/download/dsh-discord-richpresence.tgz
 ```
 
 dsh overwrites the old package with the new tarball and keeps the `dsh.profile.bundles` entry.

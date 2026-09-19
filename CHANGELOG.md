@@ -2,6 +2,31 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.3.1] - 2026-09-19
+
+### Fixed
+
+- **Client registration bug**: `dsh.client.inject` listed
+  `@deepseek-ai/dsh-client-ui-slots`, which is not a composed row in the web
+  profile (the `slots` service comes from `dsh-client-ui-renderer`). An injected
+  package must be a composed row, so the browser half could fail to activate.
+  The list now mirrors the officially composed set — connection, locale,
+  ui-settings and api-remotes — the same packages
+  `dsh-client-ui-settings-general` injects. Added `test/client-inject.mjs` to
+  assert every injected package is a composed row.
+
+### Changed
+
+- Verified against the running harness release **0.1.5-rc.2** (the current npm
+  `latest`) and the **0.1.6-alpha.2** preview: both expose the same settings API
+  (`installSection` / `register`, no `installSettingsSection`) and ship
+  `@deepseek-ai/dsh-client-store`, so no further code change was needed.
+- `@deepseek-ai/dsh-settings` peer range extended with an explicit branch for
+  `0.1.6` (`… || >=0.1.6-alpha.1 <0.2.0-0`); the previous range silently
+  excluded every `0.1.6` pre-release.
+- README install commands and the marketplace entry now use the **versionless**
+  release asset, so they survive future releases.
+
 ## [0.3.0] - 2026-08-24
 
 ### Added

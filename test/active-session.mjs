@@ -10,8 +10,9 @@ const cordisPath = require.resolve('@deepseek-ai/cordis', { paths: profilePaths 
 const settingsPath = require.resolve('@deepseek-ai/dsh-settings', { paths: profilePaths })
 
 const { Context } = await import(pathToFileURL(cordisPath).href)
-const dshSettings = await import(pathToFileURL(settingsPath).href)
-const { installSettingsSection, settingsNamespace } = dshSettings
+
+/** Settings namespace under test (a plain lowercase-hyphenated id). */
+const SETTINGS_NS = 'discord-richpresence'
 
 // Mock discord-rpc: capture every SET_ACTIVITY state line.
 const pushedStates = []
@@ -86,7 +87,7 @@ const disposer = apply(ctx, {
   richJitterMs: 50,
 })
 await new Promise((r) => setTimeout(r, 50))
-const registered = registrations.get(String(settingsNamespace('discord-richpresence')))
+const registered = registrations.get(SETTINGS_NS)
 if (registered) {
   registered.resolved.richMode = true
   for (const w of registered.watchers) w()
